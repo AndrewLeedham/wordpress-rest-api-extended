@@ -379,7 +379,8 @@ class WP_REST_Server_Extended extends WP_REST_Server {
 							$response = new WP_Error( 'rest_forbidden', __( 'Sorry, you are not allowed to do that.' ), array( 'status' => rest_authorization_required_code() ) );
 						}
 					}
-				}
+        }
+        $code = null;
 				if ( ! is_wp_error( $response ) ) {
 					/**
 					 * Filters the REST dispatch request result.
@@ -400,9 +401,17 @@ class WP_REST_Server_Extended extends WP_REST_Server {
 						$response = $dispatch_result;
 					} else {
 						$response = call_user_func( $callback, $request );
-					}
+          }
+          
+          if ($response === false) {
+            $response = new WP_Error( '404', __( 'Sorry, that does not exist.' ) );
+            if(!$json) {
+              $response = $response->get_error_message();
+              $code = 404;
+            }
+          }
         }
-        
+
         if($json) {
           $response = wp_json_encode($response);
         }
@@ -434,6 +443,9 @@ class WP_REST_Server_Extended extends WP_REST_Server {
 				}
 				$response->set_matched_route( $route );
         $response->set_matched_handler( $handler );
+        if($code !== null) {
+          $response->set_status($code);
+        }
 
 				return $response;
 			}

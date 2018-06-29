@@ -1,5 +1,5 @@
 # wordpress-rest-api-extended
-Extends WordPress' REST API, allowing the Content-Type header to be specified.
+Extends WordPress' REST API, allowing the Content-Type header to be specified, and 404 errors to be raised.
 
 ## Usage
 Register a route that just returns HTML.
@@ -25,5 +25,14 @@ register_rest_route( 'namespace/v1', 'route' , array(
     'callback' => function(){return array('json': 'value');},
     'content_type' => 'application/json',
     'json' => true
+) );
+```
+Register a route that just returns a 404 error.
+```php
+register_rest_route( 'namespace/v1', 'route' , array(
+    'methods' => 'GET',
+    'callback' => function(){return false;}, // Callback can return a false to trigger a 404 error.
+    'content_type' => 'text/html',
+    'json' => false // If JSON parsing is enabled, the result will be 200 OK but the error will be returned in the JSON.
 ) );
 ```
