@@ -3,7 +3,7 @@
 * Plugin Name: WordPress Rest API Extended
 * Text Domain: wordPress-rest-api-extended
 * Description: Extends WordPress' REST API, allowing the Content-Type header to be specified.
-* Version: 1.0.2
+* Version: 1.0.3
 * Author: Andrew Leedham
 **/
 

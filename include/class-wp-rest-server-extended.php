@@ -409,9 +409,7 @@ class WP_REST_Server_Extended extends WP_REST_Server {
           }
         }
 
-        if($json) {
-          $response = wp_json_encode($response);
-        } else if ($response === false) {
+        if ($response === false && !$json) {
           $response = new WP_Error( 'rest_no_route', __( 'No route was found matching the URL and request method' ), array( 'status' => 404 ) );
         }
 				/**
