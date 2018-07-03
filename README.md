@@ -32,7 +32,7 @@ Register a route that just returns a 404 error.
 register_rest_route( 'namespace/v1', 'route' , array(
     'methods' => 'GET',
     'callback' => function(){return false;}, // Callback can return a false to trigger a 404 error.
-    'content_type' => 'text/html',
-    'json' => false // If JSON parsing is enabled, the result will be 200 OK but the error will be returned in the JSON.
+    'content_type' => 'text/html', // Errors will be returned as JSON regardless.
+    'json' => false
 ) );
 ```

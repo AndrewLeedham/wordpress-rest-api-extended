@@ -100,7 +100,7 @@ class WP_REST_Server_Extended extends WP_REST_Server {
 	 * @return false|null Null if not served and a HEAD request, false otherwise.
 	 */
 	public function serve_request( $path = null ) {
-		$content_type = isset( $_GET['_jsonp'] ) ? 'application/javascript' : 'application/json';
+    $content_type = isset( $_GET['_jsonp'] ) ? 'application/javascript' : 'application/json';
 		$this->send_header( 'Content-Type', $content_type . '; charset=' . get_option( 'blog_charset' ) );
 		$this->send_header( 'X-Robots-Tag', 'noindex' );
 		$api_root = get_rest_url();
@@ -187,13 +187,16 @@ class WP_REST_Server_Extended extends WP_REST_Server {
 		} elseif ( isset( $_SERVER['HTTP_X_HTTP_METHOD_OVERRIDE'] ) ) {
 			$request->set_method( $_SERVER['HTTP_X_HTTP_METHOD_OVERRIDE'] );
 		}
-		$result = $this->check_authentication();
+    $result = $this->check_authentication();
+    
+    $this->json = true;
+
 		if ( ! is_wp_error( $result ) ) {
 			$result = $this->dispatch( $request );
 		}
 		// Normalize to either WP_Error or WP_REST_Response...
 		$result = rest_ensure_response( $result );
-		// ...then convert WP_Error across.
+    // ...then convert WP_Error across.
 		if ( is_wp_error( $result ) ) {
 			$result = $this->error_to_response( $result );
 		}
@@ -254,7 +257,11 @@ class WP_REST_Server_Extended extends WP_REST_Server {
 			 */
       $result = apply_filters( 'rest_pre_echo_response', $result, $this, $request );
 
-			$json_error_message = $this->get_json_last_error();
+      if ($this->json) {
+        $result = wp_json_encode( $result );
+      }
+      
+      $json_error_message = $this->get_json_last_error();
 			if ( $json_error_message ) {
 				$json_error_obj = new WP_Error( 'rest_encode_error', $json_error_message, array( 'status' => 500 ) );
 				$result         = $this->error_to_response( $json_error_obj );
@@ -316,8 +323,6 @@ class WP_REST_Server_Extended extends WP_REST_Server {
         $content_type = $handler['content_type'];
         $json = $handler['json'];
         $response = null;
-        
-        $this->send_header( 'Content-Type', $content_type . '; charset=' . get_option( 'blog_charset' ) );
 
 				// Fallback to GET method if no HEAD method is registered.
 				$checked_method = $method;
@@ -402,18 +407,12 @@ class WP_REST_Server_Extended extends WP_REST_Server {
 					} else {
 						$response = call_user_func( $callback, $request );
           }
-          
-          if ($response === false) {
-            $response = new WP_Error( '404', __( 'Sorry, that does not exist.' ) );
-            if(!$json) {
-              $response = $response->get_error_message();
-              $code = 404;
-            }
-          }
         }
 
         if($json) {
           $response = wp_json_encode($response);
+        } else if ($response === false) {
+          $response = new WP_Error( 'rest_no_route', __( 'No route was found matching the URL and request method' ), array( 'status' => 404 ) );
         }
 				/**
 				 * Filters the response immediately after executing any REST API
@@ -437,8 +436,10 @@ class WP_REST_Server_Extended extends WP_REST_Server {
 				 */
 				$response = apply_filters( 'rest_request_after_callbacks', $response, $handler, $request );
 				if ( is_wp_error( $response ) ) {
-					$response = $this->error_to_response( $response );
+          $response = $this->error_to_response( $response );
 				} else {
+          $this->send_header( 'Content-Type', $content_type . '; charset=' . get_option( 'blog_charset' ) );
+          $this->json = $json;
 					$response = rest_ensure_response( $response );
 				}
 				$response->set_matched_route( $route );
@@ -449,7 +450,7 @@ class WP_REST_Server_Extended extends WP_REST_Server {
 
 				return $response;
 			}
-		}
+    }
 		return $this->error_to_response( new WP_Error( 'rest_no_route', __( 'No route was found matching the URL and request method' ), array( 'status' => 404 ) ) );
 	}
 
